@@ -38,7 +38,10 @@ def main():
             # 打印畫面
             print()
 
-        snakeState()  # 更新 蛇 的狀態
+        updateSnakeState()  # 更新 蛇 的狀態
+        if isEatStar():
+            randomStarPosition()
+
         # starState     # 更新 星 的狀態
         # 設定畫面更新時間
         time.sleep(timeLength)
@@ -48,7 +51,7 @@ def main():
 
 
 # 蛇的狀態
-def snakeState():
+def updateSnakeState():
     
     global snake_X, snake_Y, currentDirection
     new_X = snake_X
@@ -78,14 +81,19 @@ def snakeState():
          snake_X = new_X
          snake_Y = new_Y
     
+def isEatStar():
+    return  snake_X == star_X and snake_Y ==star_Y
+        
+def randomStarPosition():
+    star_X=random.randint(1, maxLength - 1 - 1)
+    star_Y=random.randint(1, maxLength - 1 - 1)
+    
 
 
 
-
-
-# def starState():
-#     global star_X, star_Y,currentSnakeCoordinate
-#     new_X, new_Y = star_X, star_Y
+def starState():
+     global star_X, star_Y,currentSnakeCoordinate
+     new_X, new_Y = star_X, star_Y
 
 
 
