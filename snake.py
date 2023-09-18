@@ -3,144 +3,105 @@ import time
 import keyboard
 import random
 
-# 蛇初始位置
-snake_X = 2
-snake_Y = 2
+class SnakeGame:
+    def __init__(self):
+        self.max_length = 10
+        self.time_delay = 0.1
+        self.snake = Snake(self.max_length)
+        self.star = Star(self.max_length)
 
-star_X = 3
-star_Y = 3
+    def run(self):
+        while True:
+            self.record_snake_path()
+            self.update_snake_state()
 
-wall = " 牆"
-empty = " -"
-snake_symbol = " 蛇"
-snake_Lenght = 1
-star_symbol = " 星"
-maxLength = 10
-timeLength = 0.1
-currentDirection = "right"  # 當前方向 右移
-snake_recordPath = []
-last_recorded_path = None 
-snake_body = [(snake_X, snake_Y)]
+            if self.is_eating_star():
+                self.snake.increase_length()
+                self.star.randomize_position()
 
-# 畫面渲染
-def main():
-    while True:
-        for i in range(maxLength):
-            for j in range(maxLength):
-                if i in (0, maxLength - 1) or j in (0, maxLength - 1):
-                    print(wall, end="")
-                # 打印 蛇的畫面
-                elif i == snake_Y and j == snake_X:
-                    print(snake_symbol, end="")
-                # 打印 星星的畫面
-                elif i == star_Y and j == star_X:
-                    print(star_symbol, end="")
-                # 打印 蛇身體的畫面
-                elif (j, i) in snake_body:
-                    
-                    print(snake_symbol, end="")
+            print(f"Snake Length: {self.snake.length}")
+            self.print_game_board()
+            time.sleep(self.time_delay)
+            os.system("cls" if os.name == "nt" else "clear")
+
+    def print_game_board(self):
+        for i in range(self.max_length):
+            for j in range(self.max_length):
+                if i in (0, self.max_length - 1) or j in (0, self.max_length - 1):
+                    print(" 墙", end="")
+                elif (i, j) == (self.snake.y, self.snake.x):
+                    print(" 蛇", end="")
+                elif (i, j) == (self.star.y, self.star.x):
+                    print(" 星", end="")
                 else:
-                    print(empty, end=" ")
-            # 打印畫面
+                    print(" -", end=" ")
             print()
-        
-        # 記錄 蛇 的路徑
-        recordSnakePath()
-        # print(snake_recordPath)
-        # 更新 蛇 的狀態
-        updateSnakeState()  
-        if isEatStar():
-            # 增加 蛇 的長度
-            add_snake_Length_()
-            # 更新 星 的位置
-            randomStarPosition()
 
-        print("當前分數", snake_Lenght)
-        # 設定畫面更新時間
-        time.sleep(timeLength)
-        # 清除畫面
-        os.system("cls" if os.name == "nt" else "clear")
+    def update_snake_state(self):
+        self.snake.move()
+        if keyboard.is_pressed("right") and self.snake.direction != "left":
+            self.snake.direction = "right"
+        elif keyboard.is_pressed("left") and self.snake.direction != "right":
+            self.snake.direction = "left"
+        elif keyboard.is_pressed("up") and self.snake.direction != "down":
+            self.snake.direction = "up"
+        elif keyboard.is_pressed("down") and self.snake.direction != "up":
+            self.snake.direction = "down"
 
-# 蛇的狀態
-def updateSnakeState():
-    bodyLength()
-    global snake_X, snake_Y, currentDirection
-    new_X = snake_X
-    new_Y = snake_Y
+    def is_eating_star(self):
+        return (self.snake.x, self.snake.y) == (self.star.x, self.star.y)
 
-    if keyboard.is_pressed("right"):
-        currentDirection = "right"
-    elif keyboard.is_pressed("left"):
-        currentDirection = "left"
-    elif keyboard.is_pressed("up"):
-        currentDirection = "up"
-    elif keyboard.is_pressed("down"):
-        currentDirection = "down"
+    def record_snake_path(self):
+        self.snake.record_path()
 
-    if currentDirection == "right":
-        new_X = new_X + 1
-    elif currentDirection == "left":
-        new_X = new_X - 1
-    elif currentDirection == "up":
-        new_Y = new_Y - 1
-    elif currentDirection == "down":
-        new_Y = new_Y + 1
+class Snake:
+    def __init__(self, max_length):
+        self.max_length = max_length
+        self.x = 2
+        self.y = 2
+        self.direction = "right"
+        self.length = 1
+        self.path = []
 
-    # 判斷站存的x和y是不是在牆壁上，如果是的話就不要用佔存的值
-    isTouchWall = new_X == 0 or new_X == maxLength - 1 or new_Y == 0 or new_Y == maxLength - 1
-    if not isTouchWall:
-        snake_X = new_X
-        snake_Y = new_Y
+    def move(self):
+        new_x, new_y = self.x, self.y
+        if self.direction == "right":
+            new_x += 1
+        elif self.direction == "left":
+            new_x -= 1
+        elif self.direction == "up":
+            new_y -= 1
+        elif self.direction == "down":
+            new_y += 1
 
-# 是否吃掉星星
-def isEatStar():
-    return snake_X == star_X and snake_Y == star_Y    
+        if not self.is_touching_wall(new_x, new_y):
+            self.x, self.y = new_x, new_y
 
+    def is_touching_wall(self, x, y):
+        return x == 0 or x == self.max_length - 1 or y == 0 or y == self.max_length - 1
 
-# 重新隨機產生星星位子
-def randomStarPosition():
-    # 防止無止盡的運算而卡住
-    max_attempts = 100
-    attempts = 0
+    def increase_length(self):
+        self.length += 1
 
-    while attempts < max_attempts:
-        global star_X, star_Y
-        random_X = random.randint(1, maxLength - 1 - 1)
-        random_Y = random.randint(1, maxLength - 1 - 1)
-        isNotCover = (random_X, random_Y) not in snake_recordPath and (random_X, random_Y) not in snake_body
-        if isNotCover:
-            star_X = random_X
-            star_Y = random_Y
-            break
+    def record_path(self):
+        self.path.insert(0, (self.x, self.y))
 
-        attempts += 1
+class Star:
+    def __init__(self, max_length):
+        self.max_length = max_length
+        self.x = 3
+        self.y = 3
+
+    def randomize_position(self):
+        while True:
+            random_x = random.randint(1, self.max_length - 2)
+            random_y = random.randint(1, self.max_length - 2)
+            if (random_x, random_y) != (self.x, self.y):
+                self.x, self.y = random_x, random_y
+                break
+
+if __name__ == "__main__":
+    game = SnakeGame()
+    game.run()
 
 
-
-
-# 更新蛇的身體位置
-def bodyLength():
-    global snake_body
-    snake_body.insert(0, (snake_X, snake_Y))
-    
-    # 檢查蛇的身體長度是否大於等於 snake_length
-    if len(snake_body) > snake_Lenght:
-        snake_body.pop()
-
-
-# 紀錄蛇的路徑
-def recordSnakePath():
-    global last_recorded_path
-    snake_Path = (snake_X, snake_Y)
-    # 當撞牆會累積同樣座標 須避免同座標一直被輸入
-    if snake_Path != last_recorded_path:
-        snake_recordPath.insert(0, snake_Path)
-        last_recorded_path = snake_Path
-
-# 增加蛇的長度
-def add_snake_Length_():
-    global snake_Lenght
-    snake_Lenght = snake_Lenght + 1
-
-
-main()
